@@ -9,31 +9,282 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --primary: #00ff88; --secondary: #00ffee; }
+        :root { --primary: #00ff88; --secondary: #00ffee; --ai-blue: #0066ff; }
         body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #050505; color: #e0ffe0; min-height: 100vh; overflow-x: hidden; }
         
-        .glass-ui { 
-            background: rgba(255, 255, 255, 0.02); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            border-radius: 28px; 
-        }
+        .glass-ui { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; }
+        .premium-text { background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-action { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-blue { background: linear-gradient(135deg, #0066ff, #00d2ff); color: white; font-weight: 800; transition: 0.3s; }
+        .btn-action:hover, .btn-blue:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0, 255, 136, 0.2); }
+        .card-hover { transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
+        .card-hover:hover { border-color: var(--primary); background: rgba(0, 255, 136, 0.04); transform: scale(1.03); }
+        .view-step { display: none; animation: fadeIn 0.5s ease-out; }
+        .view-active { display: block; }
 
-        .premium-text { 
-            background: linear-gradient(to right, var(--primary), var(--secondary)); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #pdf-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; flex-direction: column; }
+        .gallery-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .header-logo-image { height: 50px; width: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary); }
 
-        .btn-action { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        /* KOLA AI BUBBLE */
+        #kola-trigger {
+            position: fixed; right: 20px; bottom: 30px; width: 65px; height: 65px;
+            background: var(--ai-blue); border-radius: 50%; z-index: 1000;
+            display: flex; items-center; justify-content: center; color: white;
+            font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: 0 0 20px rgba(0,102,255,0.5);
+            border: 2px solid rgba(255,255,255,0.2); text-align: center; line-height: 1.2;
         }
+        .pulse { animation: pulse-anim 2s infinite; }
+        @keyframes pulse-anim { 0% { box-shadow: 0 0 0 0 rgba(0,102,255,0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,102,255,0); } 100% { box-shadow: 0 0 0 0 rgba(0,102,255,0); } }
 
-        .btn-blue {
-            background: linear-gradient(135deg, #0066ff, #00d2ff);
-            color: white; font-weight: 800; transition: 0.3s;
+        /* KOLA TERMINAL UI */
+        #kola-terminal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; z-index: 9999; display: none; flex-direction: column;
+            animation: slideUp 0.3s ease-out;
         }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .chat-msgs { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { padding: 14px 18px; border-radius: 22px; max-width: 85%; font-size: 14px; line-height: 1.5; }
+        .msg-ai { background: rgba(255,255,255,0.04); color: #00ff88; align-self: flex-start; border: 1px solid rgba(0,255,136,0.1); }
+        .msg-user { background: var(--ai-blue); color: white; align-self: flex-end; border-radius: 22px 22px 0 22px; }
+        .img-preview-box { display: none; width: 80px; height: 80px; border-radius: 12px; border: 2px solid var(--primary); overflow: hidden; margin-bottom: 10px; position: relative; }
+    </style>
+</head>
+<body>
+
+<div id="kola-trigger" class="pulse" onclick="toggleTerminal(true)">KOLA<br>AI</div>
+
+<div id="kola-terminal">
+    <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/50 backdrop-blur">
+        <button onclick="toggleTerminal(false)" class="text-gray-400 font-bold text-xs"><i class="fa-solid fa-chevron-down mr-1"></i> MINIMIZE</button>
+        <span class="premium-text font-black tracking-widest text-[10px]">KOLA VISION TERMINAL</span>
+        <div class="w-2 h-2 bg-[#00ff88] rounded-full animate-pulse"></div>
+    </div>
+    
+    <div id="chatMessages" class="chat-msgs">
+        <div class="msg msg-ai shadow-lg">Hello Alok! I am ready. You can ask questions or send photos of your notes. I will keep it very simple.</div>
+    </div>
+
+    <div class="p-4 bg-black/80 border-t border-white/10 pb-8">
+        <div id="imgPreviewBox" class="img-preview-box mx-auto">
+            <img id="imgPreview" src="" class="w-full h-full object-cover">
+            <button onclick="clearImage()" class="absolute top-0 right-0 bg-red-600 text-white p-1 text-[8px]"><i class="fa-solid fa-x"></i></button>
+        </div>
+        <div class="flex gap-2 items-center max-w-2xl mx-auto">
+            <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="previewImg(this)">
+            <button onclick="document.getElementById('photoInput').click()" class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 text-gray-400 flex items-center justify-center">
+                <i class="fa-solid fa-camera"></i>
+            </button>
+            <input type="text" id="chatInput" placeholder="Ask KOLA..." class="flex-grow bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-[#00ff88] text-sm text-white">
+            <button onclick="startVoiceInput()" id="micBtn" class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white"><i class="fa-solid fa-microphone"></i></button>
+            <button onclick="handleSend()" class="w-12 h-12 rounded-xl bg-[#00ff88] flex items-center justify-center text-black"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<div id="pdf-viewer-overlay">
+    <div class="p-4 bg-black border-b border-white/10 flex justify-between items-center">
+        <button onclick="closePDF()" class="text-[#00ff88] font-black flex items-center gap-2 px-4 py-2 rounded-xl transition-all"><i class="fa-solid fa-arrow-left"></i> BACK</button>
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Secure Viewer</span>
+    </div>
+    <iframe id="pdfFrame" class="w-full flex-grow" src="" frameborder="0"></iframe>
+</div>
+
+<header class="p-4 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
+    <div class="brand-logo-container cursor-pointer" onclick="location.reload()">
+        <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U" class="header-logo-image" alt="KOLA BRO Logo">
+        <h1 class="text-2xl font-black premium-text">KOLA BRO</h1>
+    </div>
+    <div id="statusBadge" class="hidden text-[10px] font-black bg-[#00ff88]/10 text-[#00ff88] px-4 py-2 rounded-full border border-[#00ff88]/20 uppercase tracking-widest">Active Session</div>
+</header>
+
+<div class="container mx-auto px-6 py-8 max-w-4xl">
+    <div id="step-auth" class="view-step view-active max-w-md mx-auto glass-ui p-10 text-center mt-10">
+        <h2 class="text-3xl font-extrabold mb-2 text-white italic">Premium <span class="premium-text">Vault</span></h2>
+        <p class="text-gray-500 text-sm mb-8">Enter your details to explore the hub</p>
+        <div class="space-y-4 text-left">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <input type="email" id="userEmail" placeholder="Email Address" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <input type="tel" id="userPhone" placeholder="Mobile Number" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <select id="userClass" class="w-full p-4 rounded-xl bg-[#111] border border-white/10 outline-none text-white focus:border-[#00ff88]">
+                <option value="">Select Your Class</option>
+                <option value="9">Class 9th</option><option value="10">Class 10th</option><option value="11">Class 11th</option><option value="12">Class 12th</option>
+            </select>
+            <button onclick="enterHub()" class="btn-action w-full p-5 rounded-xl uppercase tracking-tighter mt-4">Access Vault</button>
+        </div>
+    </div>
+
+    <div id="step-about" class="view-step glass-ui p-8 text-center">
+        <div class="mb-6 text-5xl">📚</div>
+        <h2 class="text-3xl font-black text-white mb-6">🌐 Welcome!</h2>
+        <div class="text-gray-300 text-left max-w-2xl mx-auto text-lg leading-relaxed">
+            <p>Hello! 👋 I am <b>Alok Singh</b>. On this site, I share my <b>handwritten notes</b> 📝 to help you score better 💯.</p>
+        </div>
+        <button onclick="navigateTo('step-subjects')" class="btn-blue px-12 py-5 rounded-full mt-10 uppercase text-sm">Explore Now</button>
+    </div>
+
+    <div id="step-subjects" class="view-step">
+        <h2 class="text-4xl font-black text-white italic mb-10">Master <span class="premium-text">Catalogue</span></h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="subjectList"></div>
+    </div>
+
+    <div id="step-chapters" class="view-step">
+        <div class="flex items-center justify-between mb-10">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 font-bold text-xs"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+            <h2 id="activeSubjectName" class="text-xl font-black premium-text uppercase italic"></h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="chapterGrid"></div>
+    </div>
+
+    <div id="step-gallery" class="view-step">
+        <div class="flex items-center justify-between mb-10">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 font-bold text-xs"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+            <h2 class="text-xl font-black premium-text uppercase italic">PHOTO GALLERY</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U&sz=w800" class="gallery-img">
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwKGhoQGjcTI1kHYuYlGGI_vGlojCgeOk",
+      authDomain: "kola26-70d76.firebaseapp.com",
+      projectId: "kola26-70d76",
+      storageBucket: "kola26-70d76.firebasestorage.app",
+      messagingSenderId: "27350698262",
+      appId: "1:27350698262:web:96b0f2fc0865db19252837"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let activeBase64 = null;
+
+    // AI TERMINAL LOGIC
+    window.toggleTerminal = (show) => {
+        document.getElementById('kola-terminal').style.display = show ? 'flex' : 'none';
+        document.body.style.overflow = show ? 'hidden' : 'auto';
+    }
+
+    window.previewImg = (input) => {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                activeBase64 = e.target.result;
+                document.getElementById('imgPreview').src = activeBase64;
+                document.getElementById('imgPreviewBox').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    window.clearImage = () => {
+        activeBase64 = null;
+        document.getElementById('imgPreviewBox').style.display = 'none';
+        document.getElementById('photoInput').value = "";
+    }
+
+    window.handleSend = async () => {
+        const input = document.getElementById('chatInput');
+        const query = input.value.trim();
+        if(!query && !activeBase64) return;
+
+        appendMsg('user', query || "Analyzed photo.");
+        const sendImg = activeBase64;
+        input.value = "";
+        clearImage();
+
+        try {
+            const res = await fetch('http://localhost:3000/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question: query + " (Give a 2 sentence simple answer)", 
+                    imageData: sendImg 
+                })
+            });
+            const data = await res.json();
+            appendMsg('ai', data.answer);
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(data.answer));
+        } catch (e) {
+            appendMsg('ai', "Server Offline. Start 'node server.js' in Termux.");
+        }
+    }
+
+    function appendMsg(role, text) {
+        const div = document.createElement('div');
+        div.className = `msg msg-${role} shadow-lg`;
+        div.innerText = text;
+        document.getElementById('chatMessages').appendChild(div);
+        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+    }
+
+    window.startVoiceInput = () => {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.onstart = () => document.getElementById('micBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        recognition.onresult = (e) => { document.getElementById('chatInput').value = e.results[0][0].transcript; handleSend(); };
+        recognition.onend = () => document.getElementById('micBtn').innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        recognition.start();
+    }
+
+    // VAULT LOGIC
+    window.enterHub = async function() {
+        const name = document.getElementById('userName').value;
+        if(!name) return alert("Fill details!");
+        try {
+            await addDoc(collection(db, "visitors"), { name, time: new Date() });
+            document.getElementById("statusBadge").classList.remove('hidden');
+            renderSubjects();
+            navigateTo('step-about');
+        } catch (e) { alert(e.message); }
+    }
+
+    window.navigateTo = (id) => {
+        document.querySelectorAll('.view-step').forEach(el => el.classList.remove('view-active'));
+        document.getElementById(id).classList.add('view-active');
+    }
+
+    const subjects = [{name:'Physics',icon:'fa-atom'},{name:'Chemistry',icon:'fa-flask'},{name:'Biology',icon:'fa-dna'},{name:'Math',icon:'fa-calculator'},{name:'Gallery',icon:'fa-image'}];
+
+    function renderSubjects() {
+        let html = "";
+        subjects.forEach(s => {
+            html += `<div class="glass-ui card-hover p-8 text-center" onclick="openSubject('${s.name}')">
+                <i class="fa-solid ${s.icon} text-3xl text-[#00ff88] mb-4"></i>
+                <h3 class="text-white font-bold text-[10px] uppercase">${s.name}</h3>
+            </div>`;
+        });
+        document.getElementById("subjectList").innerHTML = html;
+    }
+
+    window.openSubject = (n) => {
+        if(n === 'Gallery') return navigateTo('step-gallery');
+        document.getElementById("activeSubjectName").innerText = n;
+        let h = ""; for(let i=1; i<=5; i++) {
+            h += `<div class="glass-ui p-6 flex justify-between" onclick="alert('Locked')">
+                <span class="text-white">Chapter ${i}</span><i class="fa-solid fa-lock text-gray-600"></i>
+            </div>`;
+        }
+        document.getElementById("chapterGrid").innerHTML = h;
+        navigateTo('step-chapters');
+    }
+
+    window.closePDF = () => { document.getElementById('pdf-viewer-overlay').style.display='none'; }
+</script>
+
+<script async="async" data-cfasync="false" src="https://pl29033139.profitablecpmratenetwork.com/4d1e6bc83b89e3bc5eb700742fd65286/invoke.js"></script>
+<div id="container-4d1e6bc83b89e3bc5eb700742fd65286" class="mt-10"></div>
+
+</body>
+</html>
 
         .btn-action:hover, .btn-blue:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0, 255, 136, 0.2); }
 
