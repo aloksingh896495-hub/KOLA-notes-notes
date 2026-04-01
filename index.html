@@ -9,31 +9,261 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --primary: #00ff88; --secondary: #00ffee; --ai-blue: #0066ff; }
+        :root { --primary: #00ff88; --secondary: #00ffee; }
         body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #050505; color: #e0ffe0; min-height: 100vh; overflow-x: hidden; }
         
-        .glass-ui { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; }
-        .premium-text { background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .btn-action { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-blue { background: linear-gradient(135deg, #0066ff, #00d2ff); color: white; font-weight: 800; transition: 0.3s; }
+        .glass-ui { 
+            background: rgba(255, 255, 255, 0.02); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 28px; 
+        }
+
+        .premium-text { 
+            background: linear-gradient(to right, var(--primary), var(--secondary)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+
+        .btn-action { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #0066ff, #00d2ff);
+            color: white; font-weight: 800; transition: 0.3s;
+        }
+
         .btn-action:hover, .btn-blue:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0, 255, 136, 0.2); }
+
         .card-hover { transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
         .card-hover:hover { border-color: var(--primary); background: rgba(0, 255, 136, 0.04); transform: scale(1.03); }
+
         .view-step { display: none; animation: fadeIn 0.5s ease-out; }
         .view-active { display: block; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         #pdf-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; flex-direction: column; }
+        
         .gallery-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .header-logo-image { height: 50px; width: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary); }
+        .gallery-img:hover { transform: scale(1.05); border-color: var(--primary); }
 
-        /* KOLA AI BUBBLE */
-        #kola-trigger {
-            position: fixed; right: 20px; bottom: 30px; width: 65px; height: 65px;
-            background: var(--ai-blue); border-radius: 50%; z-index: 1000;
-            display: flex; items-center; justify-content: center; color: white;
-            font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: 0 0 20px rgba(0,102,255,0.5);
-            border: 2px solid rgba(255,255,255,0.2); text-align: center; line-height: 1.2;
+        .brand-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* UPDATED LOGO STYLE FOR CIRCULAR SHAPE */
+        .header-logo-image {
+            height: 50px;
+            width: 50px;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 1px solid var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div id="pdf-viewer-overlay">
+    <div class="p-4 bg-black border-b border-white/10 flex justify-between items-center">
+        <button onclick="closePDF()" class="text-[#00ff88] font-black flex items-center gap-2 hover:bg-[#00ff88]/10 px-4 py-2 rounded-xl transition-all">
+            <i class="fa-solid fa-arrow-left"></i> BACK
+        </button>
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Secure Viewer</span>
+    </div>
+    <iframe id="pdfFrame" class="w-full flex-grow" src="" frameborder="0"></iframe>
+</div>
+
+<header class="p-4 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
+    <div class="brand-logo-container cursor-pointer" onclick="location.reload()">
+        <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U" class="header-logo-image" alt="KOLA BRO Logo">
+        <h1 class="text-2xl font-black premium-text">KOLA BRO</h1>
+    </div>
+    <div id="statusBadge" class="hidden text-[10px] font-black bg-[#00ff88]/10 text-[#00ff88] px-4 py-2 rounded-full border border-[#00ff88]/20 uppercase tracking-widest">
+        Active Session
+    </div>
+</header>
+
+<div class="container mx-auto px-6 py-8 max-w-4xl">
+
+    <div id="step-auth" class="view-step view-active max-w-md mx-auto glass-ui p-10 text-center mt-10">
+        <h2 class="text-3xl font-extrabold mb-2 text-white italic">Premium <span class="premium-text">Vault</span></h2>
+        <p class="text-gray-500 text-sm mb-8">Enter your details to explore the hub</p>
+        
+        <div class="space-y-4 text-left">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <input type="email" id="userEmail" placeholder="Email Address" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <input type="tel" id="userPhone" placeholder="Mobile Number" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <select id="userClass" class="w-full p-4 rounded-xl bg-[#111] border border-white/10 outline-none text-white focus:border-[#00ff88]">
+                <option value="">Select Your Class</option>
+                <option value="9">Class 9th</option>
+                <option value="10">Class 10th</option>
+                <option value="11">Class 11th</option>
+                <option value="12">Class 12th</option>
+            </select>
+            
+            <button onclick="enterHub()" class="btn-action w-full p-5 rounded-xl uppercase tracking-tighter mt-4">Access Vault</button>
+        </div>
+    </div>
+
+    <div id="step-about" class="view-step glass-ui p-8 md:p-12 text-center">
+        <div class="mb-6 text-5xl">📚</div>
+        <h2 class="text-3xl font-black text-white mb-6">🌐 Welcome to y Learning Hub!</h2>
+        <div class="text-gray-300 space-y-6 text-lg leading-relaxed text-left max-w-2xl mx-auto">
+            <p>Hello everyone! 👋 My name is <b>Alok Singh</b>, and I am a <b>Class 10th student</b> 🎓.</p>
+            <p>On this website, I share my <b>handwritten notes</b> 📝 to help fellow students understand concepts easily and score better 💯.</p>
+            <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
+                <h3 class="font-bold text-[#00ff88] mb-3">🚀 What you’ll find here:</h3>
+                <ul class="space-y-2 text-sm">
+                    <li>📘 Class 10 handwritten notes</li>
+                    <li>📂 Study materials (PDF, PPT, etc.)</li>
+                </ul>
+            </div>
+        </div>
+        <button onclick="navigateTo('step-subjects')" class="btn-blue px-12 py-5 rounded-full mt-10 uppercase tracking-widest text-sm shadow-xl">
+            Explore Now <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+    </div>
+
+    <div id="step-subjects" class="view-step">
+        <h2 class="text-4xl font-black text-white italic mb-10">Master <span class="premium-text">Catalogue</span></h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="subjectList"></div>
+    </div>
+
+    <div id="step-chapters" class="view-step">
+        <div class="flex items-center justify-between mb-10">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 id="activeSubjectName" class="text-xl font-black premium-text uppercase italic"></h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="chapterGrid"></div>
+    </div>
+
+    <div id="step-gallery" class="view-step">
+        <div class="flex items-center justify-between mb-10">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 class="text-xl font-black premium-text uppercase italic">PHOTO GALLERY</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U&sz=w800" class="gallery-img shadow-2xl">
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwKGhoQGjcTI1kHYuYlGGI_vGlojCgeOk",
+      authDomain: "kola26-70d76.firebaseapp.com",
+      projectId: "kola26-70d76",
+      storageBucket: "kola26-70d76.firebasestorage.app",
+      messagingSenderId: "27350698262",
+      appId: "1:27350698262:web:96b0f2fc0865db19252837"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.enterHub = async function() {
+        const name = document.getElementById('userName').value;
+        const email = document.getElementById('userEmail').value;
+        const phone = document.getElementById('userPhone').value;
+        const className = document.getElementById('userClass').value;
+
+        if(!name || !email || !phone || !className) return alert("Please fill all details!");
+
+        try {
+            await addDoc(collection(db, "visitors"), {
+                name, email, phone, class: className, time: new Date()
+            });
+            document.getElementById("statusBadge").classList.remove('hidden');
+            renderSubjects();
+            navigateTo('step-about');
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    }
+
+    const subjects = [
+        { name: 'Physics', icon: 'fa-atom' }, { name: 'Chemistry', icon: 'fa-flask' },
+        { name: 'Biology', icon: 'fa-dna' }, { name: 'Math', icon: 'fa-calculator' },
+        { name: 'History', icon: 'fa-landmark' }, { name: 'Computer', icon: 'fa-laptop-code' },
+        { name: 'Hindi', icon: 'fa-language' }, { name: 'English', icon: 'fa-book-open' },
+        { name: 'Gallery', icon: 'fa-image' }
+    ];
+
+    window.navigateTo = function(stepId) {
+        document.querySelectorAll('.view-step').forEach(el => el.classList.remove('view-active'));
+        document.getElementById(stepId).classList.add('view-active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.viewPDF = function(url) {
+        if(url === '#') return;
+        const previewUrl = url.replace('/view?usp=drivesdk', '/preview');
+        document.getElementById('pdfFrame').src = previewUrl;
+        document.getElementById('pdf-viewer-overlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closePDF = function() {
+        document.getElementById('pdf-viewer-overlay').style.display = 'none';
+        document.getElementById('pdfFrame').src = '';
+        document.body.style.overflow = 'auto';
+    }
+
+    function renderSubjects() {
+        let html = "";
+        subjects.forEach(s => {
+            html += `
+            <div class="glass-ui card-hover p-8 text-center" onclick="openSubject('${s.name}')">
+                <div class="w-16 h-16 bg-[#00ff88]/10 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-[#00ff88]/20">
+                    <i class="fa-solid ${s.icon} text-3xl text-[#00ff88]"></i>
+                </div>
+                <h3 class="font-bold text-white uppercase text-[10px] tracking-widest">${s.name}</h3>
+            </div>`;
+        });
+        document.getElementById("subjectList").innerHTML = html;
+    }
+
+    window.openSubject = function(subjectName) {
+        if(subjectName === 'Gallery') {
+            navigateTo('step-gallery');
+            return;
+        }
+        document.getElementById("activeSubjectName").innerText = subjectName;
+        let html = "";
+        for(let i=1; i<=7; i++) {
+            let pdfLink = (subjectName === 'Physics' && i === 1) ? "https://drive.google.com/file/d/1CbKQ7KsGoO8-RisqAU1YTXHke9aQ67kb/view?usp=drivesdk" : "#";
+            html += `
+            <div class="glass-ui card-hover p-6 flex items-center justify-between" onclick="viewPDF('${pdfLink}')">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-[#00ff88] text-xs border border-white/5">${i}</div>
+                    <div><h4 class="text-white font-bold text-sm">Chapter ${i}</h4></div>
+                </div>
+                <div class="text-[#00ff88] opacity-50"><i class="fa-solid ${pdfLink === '#' ? 'fa-lock' : 'fa-file-pdf'}"></i></div>
+            </div>`;
+        }
+        document.getElementById("chapterGrid").innerHTML = html;
+        navigateTo('step-chapters');
+    }
+</script>
+<script async="async" data-cfasync="false" src="https://pl29033139.profitablecpmratenetwork.com/4d1e6bc83b89e3bc5eb700742fd65286/invoke.js"></script>
+<div id="container-4d1e6bc83b89e3bc5eb700742fd65286"></div>
+
+</body>
+</html>
         }
         .pulse { animation: pulse-anim 2s infinite; }
         @keyframes pulse-anim { 0% { box-shadow: 0 0 0 0 rgba(0,102,255,0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,102,255,0); } 100% { box-shadow: 0 0 0 0 rgba(0,102,255,0); } }
