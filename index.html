@@ -45,47 +45,48 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        #pdf-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; flex-direction: column; }
+        #pdf-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; z-index: 100; flex-direction: column; }
         
         .gallery-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
         .gallery-img:hover { transform: scale(1.05); border-color: var(--primary); }
 
-        .brand-logo-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header-logo-image {
-            height: 50px;
-            width: 50px;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 1px solid var(--primary);
-        }
+        .brand-logo-container { display: flex; align-items: center; gap: 15px; }
+        .header-logo-image { height: 50px; width: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary); box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
     </style>
 </head>
 <body>
 
 <div id="pdf-viewer-overlay">
-    <div class="p-4 bg-black border-b border-white/10 flex justify-between items-center">
-        <button onclick="closePDF()" class="text-[#00ff88] font-black flex items-center gap-2 hover:bg-[#00ff88]/10 px-4 py-2 rounded-xl transition-all">
-            <i class="fa-solid fa-arrow-left"></i> BACK
-        </button>
-        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Secure Viewer</span>
+    <div class="p-4 bg-black/90 border-b border-white/10 flex justify-between items-center backdrop-blur-md sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <button onclick="closePDF()" class="text-white bg-white/10 hover:bg-red-500/20 hover:text-red-500 w-10 h-10 rounded-full transition-all flex items-center justify-center">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="flex flex-col">
+                <h3 id="pdfTitle" class="text-sm font-bold text-white uppercase tracking-widest leading-none mb-1">Document Viewer</h3>
+                <span class="text-[9px] text-[#00ff88] font-bold uppercase tracking-widest">Kola Bro Premium Access</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <a id="pdfDownloadLink" href="#" target="_blank" class="bg-[#00ff88] hover:scale-105 text-black px-6 py-2.5 rounded-full text-xs font-black flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)]">
+                <i class="fa-solid fa-download"></i> DOWNLOAD PDF
+            </a>
+            <div class="h-8 w-px bg-white/20 hidden md:block"></div>
+            <img src="https://drive.google.com/thumbnail?id=1CmuqEEPhVNyLZozJz7xS1RJrL93kZGoy" class="h-8 w-8 rounded-full border border-[#00ff88] hidden md:block">
+        </div>
     </div>
-    <iframe id="pdfFrame" class="w-full flex-grow" src="" frameborder="0"></iframe>
+    <div class="flex-grow w-full h-full bg-[#111]">
+        <iframe id="pdfFrame" class="w-full h-full border-none" src="" allowfullscreen></iframe>
+    </div>
 </div>
 
 <header class="p-4 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
     <div class="brand-logo-container cursor-pointer" onclick="location.reload()">
-        <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U" class="header-logo-image" alt="KOLA BRO Logo">
+        <img src="https://drive.google.com/thumbnail?id=1CmuqEEPhVNyLZozJz7xS1RJrL93kZGoy" class="header-logo-image" alt="KOLA BRO Logo">
         <h1 class="text-2xl font-black premium-text">KOLA BRO</h1>
     </div>
-    <div id="statusBadge" class="hidden text-[10px] font-black bg-[#00ff88]/10 text-[#00ff88] px-4 py-2 rounded-full border border-[#00ff88]/20 uppercase tracking-widest">
-        Active Session
-    </div>
+    <div id="statusBadge" class="hidden text-[10px] font-black bg-[#00ff88]/10 text-[#00ff88] px-4 py-2 rounded-full border border-[#00ff88]/20 uppercase tracking-widest">Active Session</div>
 </header>
 
 <div class="container mx-auto px-6 py-8 max-w-4xl">
@@ -93,7 +94,6 @@
     <div id="step-auth" class="view-step view-active max-w-md mx-auto glass-ui p-10 text-center mt-10">
         <h2 class="text-3xl font-extrabold mb-2 text-white italic">Premium <span class="premium-text">Vault</span></h2>
         <p class="text-gray-500 text-sm mb-8">Enter your details to explore the hub</p>
-        
         <div class="space-y-4 text-left">
             <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
             <input type="email" id="userEmail" placeholder="Email Address" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
@@ -105,14 +105,13 @@
                 <option value="11">Class 11th</option>
                 <option value="12">Class 12th</option>
             </select>
-            
             <button onclick="enterHub()" class="btn-action w-full p-5 rounded-xl uppercase tracking-tighter mt-4">Access Vault</button>
         </div>
     </div>
 
     <div id="step-about" class="view-step glass-ui p-8 md:p-12 text-center">
         <div class="mb-6 text-5xl">📚</div>
-        <h2 class="text-3xl font-black text-white mb-6">🌐 Welcome to y Learning Hub!</h2>
+        <h2 class="text-3xl font-black text-white mb-6">🌐 Welcome to Learning Hub!</h2>
         <div class="text-gray-300 space-y-6 text-lg leading-relaxed text-left max-w-2xl mx-auto">
             <p>Hello everyone! 👋 My name is <b>Alok Singh</b>, and I am a <b>Class 10th student</b> 🎓.</p>
             <p>On this website, I share my <b>handwritten notes</b> 📝 to help fellow students understand concepts easily and score better 💯.</p>
@@ -124,9 +123,7 @@
                 </ul>
             </div>
         </div>
-        <button onclick="navigateTo('step-subjects')" class="btn-blue px-12 py-5 rounded-full mt-10 uppercase tracking-widest text-sm shadow-xl">
-            Explore Now <i class="fa-solid fa-arrow-right ml-2"></i>
-        </button>
+        <button onclick="navigateTo('step-subjects')" class="btn-blue px-12 py-5 rounded-full mt-10 uppercase tracking-widest text-sm shadow-xl">Explore Now <i class="fa-solid fa-arrow-right ml-2"></i></button>
     </div>
 
     <div id="step-subjects" class="view-step">
@@ -136,9 +133,7 @@
 
     <div id="step-chapters" class="view-step">
         <div class="flex items-center justify-between mb-10">
-            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2">
-                <i class="fa-solid fa-chevron-left"></i> BACK
-            </button>
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-chevron-left"></i> BACK</button>
             <h2 id="activeSubjectName" class="text-xl font-black premium-text uppercase italic"></h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="chapterGrid"></div>
@@ -146,36 +141,42 @@
 
     <div id="step-gallery" class="view-step">
         <div class="flex items-center justify-between mb-10">
-            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2">
-                <i class="fa-solid fa-chevron-left"></i> BACK
-            </button>
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-chevron-left"></i> BACK</button>
             <h2 class="text-xl font-black premium-text uppercase italic">PHOTO GALLERY</h2>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <img src="https://drive.google.com/thumbnail?id=1rAVD5AxZYp8w7BH-ct8vLJ2PpwYuhZ4U&sz=w800" class="gallery-img shadow-2xl">
+            <img src="https://drive.google.com/thumbnail?id=1CmuqEEPhVNyLZozJz7xS1RJrL93kZGoy&sz=w800" class="gallery-img shadow-2xl">
         </div>
     </div>
 
-    <div id="step-admin" class="view-step glass-ui p-10 text-center">
-        <h2 class="text-3xl font-black text-white mb-6 italic"><i class="fa-solid fa-user-shield text-[#00ff88]"></i> Admin <span class="premium-text">Panel</span></h2>
-        <div class="p-8 border border-[#00ff88]/20 bg-white/5 rounded-3xl">
-            <p class="text-gray-400">Welcome back, Alok. This area is restricted to administrators only.</p>
+    <div id="step-admin" class="view-step glass-ui p-6">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h2 class="text-2xl font-black text-white italic"><i class="fa-solid fa-user-shield text-[#00ff88] mr-2"></i> Visitor <span class="premium-text">Logs</span></h2>
+            <div class="flex gap-3">
+                <button onclick="exportToCSV()" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"><i class="fa-solid fa-file-csv text-[#00ff88]"></i> DOWNLOAD CSV</button>
+                <button onclick="location.reload()" class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-2 rounded-xl text-xs font-bold transition-all">LOGOUT</button>
             </div>
-        <button onclick="location.reload()" class="btn-blue px-8 py-3 rounded-xl mt-8 uppercase text-xs">Logout Admin</button>
+        </div>
+        <div class="overflow-x-auto rounded-2xl border border-white/5">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-white/5 text-[#00ff88] uppercase text-[10px] tracking-widest">
+                    <tr><th class="p-4">Name & Email</th><th class="p-4">Phone</th><th class="p-4">Class</th><th class="p-4">Date</th><th class="p-4 text-center">Action</th></tr>
+                </thead>
+                <tbody id="visitorTableBody" class="text-gray-400 divide-y divide-white/5"></tbody>
+            </table>
+        </div>
     </div>
 
 </div>
 
 <footer class="mt-20 p-10 border-t border-white/5 text-center">
     <p class="text-gray-600 text-xs mb-4">© 2026 KOLA BRO Premium Education</p>
-    <button onclick="promptAdmin()" class="text-[10px] text-gray-700 hover:text-[#00ff88] transition-all border border-gray-800 hover:border-[#00ff88]/30 px-3 py-1 rounded-lg uppercase tracking-widest">
-        Admin Login
-    </button>
+    <button onclick="promptAdmin()" class="text-[10px] text-gray-700 hover:text-[#00ff88] transition-all border border-gray-800 hover:border-[#00ff88]/30 px-3 py-1 rounded-lg uppercase tracking-widest">Admin Login</button>
 </footer>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAwKGhoQGjcTI1kHYuYlGGI_vGlojCgeOk",
@@ -188,35 +189,56 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    let allVisitors = [];
 
     window.enterHub = async function() {
         const name = document.getElementById('userName').value;
         const email = document.getElementById('userEmail').value;
         const phone = document.getElementById('userPhone').value;
         const className = document.getElementById('userClass').value;
-
         if(!name || !email || !phone || !className) return alert("Please fill all details!");
-
         try {
-            await addDoc(collection(db, "visitors"), {
-                name, email, phone, class: className, time: new Date()
-            });
+            await addDoc(collection(db, "visitors"), { name, email, phone, class: className, time: new Date() });
             document.getElementById("statusBadge").classList.remove('hidden');
             renderSubjects();
             navigateTo('step-about');
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
+        } catch (e) { alert("Error: " + e.message); }
     }
 
-    // ADMIN LOGIN LOGIC
     window.promptAdmin = function() {
         const key = prompt("Enter Admin Key:");
-        if (key === "alokbro") {
-            navigateTo('step-admin');
-        } else if (key !== null) {
-            alert("Access Denied: Incorrect Key");
-        }
+        if (key === "alokbro") { loadAdminData(); navigateTo('step-admin'); }
+        else if (key !== null) { alert("Access Denied"); }
+    }
+
+    function loadAdminData() {
+        onSnapshot(query(collection(db, "visitors"), orderBy("time", "desc")), (snapshot) => {
+            allVisitors = [];
+            const tbody = document.getElementById("visitorTableBody");
+            tbody.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                allVisitors.push({ id: doc.id, ...data });
+                tbody.innerHTML += `
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4 text-white font-bold">${data.name}<br><span class="text-[10px] text-gray-500 font-normal">${data.email}</span></td>
+                        <td class="p-4 text-xs">${data.phone}</td>
+                        <td class="p-4 text-xs">Class ${data.class}</td>
+                        <td class="p-4 text-[10px]">${data.time?.toDate().toLocaleDateString() || "N/A"}</td>
+                        <td class="p-4 text-center"><button onclick="deleteVisitor('${doc.id}')" class="text-red-500 hover:text-red-400 transition-all"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        });
+    }
+
+    window.deleteVisitor = async (id) => { if(confirm("Delete this form?")) await deleteDoc(doc(db, "visitors", id)); }
+
+    window.exportToCSV = () => {
+        let csv = "Name,Email,Phone,Class,Date\n";
+        allVisitors.forEach(v => { csv += `${v.name},${v.email},${v.phone},${v.class},${v.time?.toDate().toLocaleDateString()}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "KolaBro_Data.csv"; a.click();
     }
 
     const subjects = [
@@ -227,65 +249,60 @@
         { name: 'Gallery', icon: 'fa-image' }
     ];
 
-    window.navigateTo = function(stepId) {
+    window.navigateTo = (stepId) => {
         document.querySelectorAll('.view-step').forEach(el => el.classList.remove('view-active'));
         document.getElementById(stepId).classList.add('view-active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    window.viewPDF = function(url) {
+    window.viewPDF = (url, title = "Study Material") => {
         if(url === '#') return;
         const previewUrl = url.replace('/view?usp=drivesdk', '/preview');
+        const downloadUrl = url.replace('/view?usp=drivesdk', '/download');
+        document.getElementById('pdfTitle').innerText = title.toUpperCase();
+        document.getElementById('pdfDownloadLink').href = downloadUrl;
         document.getElementById('pdfFrame').src = previewUrl;
         document.getElementById('pdf-viewer-overlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
 
-    window.closePDF = function() {
+    window.closePDF = () => {
         document.getElementById('pdf-viewer-overlay').style.display = 'none';
         document.getElementById('pdfFrame').src = '';
         document.body.style.overflow = 'auto';
     }
 
-    function renderSubjects() {
-        let html = "";
-        subjects.forEach(s => {
-            html += `
+    window.renderSubjects = () => {
+        document.getElementById("subjectList").innerHTML = subjects.map(s => `
             <div class="glass-ui card-hover p-8 text-center" onclick="openSubject('${s.name}')">
                 <div class="w-16 h-16 bg-[#00ff88]/10 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-[#00ff88]/20">
                     <i class="fa-solid ${s.icon} text-3xl text-[#00ff88]"></i>
                 </div>
                 <h3 class="font-bold text-white uppercase text-[10px] tracking-widest">${s.name}</h3>
-            </div>`;
-        });
-        document.getElementById("subjectList").innerHTML = html;
+            </div>`).join('');
     }
 
-    window.openSubject = function(subjectName) {
-        if(subjectName === 'Gallery') {
-            navigateTo('step-gallery');
-            return;
-        }
+    window.openSubject = (subjectName) => {
+        if(subjectName === 'Gallery') { navigateTo('step-gallery'); return; }
         document.getElementById("activeSubjectName").innerText = subjectName;
         let html = "";
         for(let i=1; i<=7; i++) {
             let pdfLink = (subjectName === 'Physics' && i === 1) ? "https://drive.google.com/file/d/1CbKQ7KsGoO8-RisqAU1YTXHke9aQ67kb/view?usp=drivesdk" : "#";
             html += `
-            <div class="glass-ui card-hover p-6 flex items-center justify-between" onclick="viewPDF('${pdfLink}')">
+            <div class="glass-ui card-hover p-6 flex items-center justify-between" onclick="viewPDF('${pdfLink}', '${subjectName} Ch-${i}')">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-[#00ff88] text-xs border border-white/5">${i}</div>
-                    <div><h4 class="text-white font-bold text-sm">Chapter ${i}</h4></div>
+                    <h4 class="text-white font-bold text-sm">Chapter ${i}</h4>
                 </div>
-                <div class="text-[#00ff88] opacity-50"><i class="fa-solid ${pdfLink === '#' ? 'fa-lock' : 'fa-file-pdf'}"></i></div>
+                <div class="text-[#00ff88] ${pdfLink === '#' ? 'opacity-20' : ''}"><i class="fa-solid ${pdfLink === '#' ? 'fa-lock' : 'fa-file-pdf'} text-lg"></i></div>
             </div>`;
         }
         document.getElementById("chapterGrid").innerHTML = html;
         navigateTo('step-chapters');
     }
 </script>
+    </script>
 <script async="async" data-cfasync="false" src="https://pl29033139.profitablecpmratenetwork.com/4d1e6bc83b89e3bc5eb700742fd65286/invoke.js"></script>
 <div id="container-4d1e6bc83b89e3bc5eb700742fd65286"></div>
-
 </body>
-    </html>
-    
+</html>
