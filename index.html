@@ -9,54 +9,526 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --primary: #00ff88; --secondary: #00ffee; }
-        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #050505; color: #e0ffe0; min-height: 100vh; overflow-x: hidden; }
-        
-        .glass-ui { 
-            background: rgba(255, 255, 255, 0.02); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            border-radius: 28px; 
+        :root {
+            --primary: #00ff88;
+            --secondary: #00ffee;
+            --accent: #7b61ff;
+            --glow: rgba(0, 255, 136, 0.18);
+            --glow2: rgba(123, 97, 255, 0.13);
         }
 
-        .premium-text { 
-            background: linear-gradient(to right, var(--primary), var(--secondary)); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #050505;
+            color: #e0ffe0;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .btn-action { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        /* ─── 3D CANVAS BACKGROUND ─── */
+        #three-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
         }
+
+        /* ─── NOISE OVERLAY ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 180px 180px;
+            opacity: 0.6;
+        }
+
+        /* ─── AMBIENT GRADIENT ORBS ─── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(110px);
+            pointer-events: none;
+            z-index: 1;
+            animation: orbFloat 12s ease-in-out infinite alternate;
+        }
+        .orb-1 {
+            width: 520px; height: 520px;
+            top: -120px; left: -120px;
+            background: radial-gradient(circle, rgba(0,255,136,0.10) 0%, transparent 70%);
+            animation-duration: 14s;
+        }
+        .orb-2 {
+            width: 420px; height: 420px;
+            top: 40%; right: -100px;
+            background: radial-gradient(circle, rgba(0,210,255,0.09) 0%, transparent 70%);
+            animation-duration: 18s;
+            animation-delay: -5s;
+        }
+        .orb-3 {
+            width: 340px; height: 340px;
+            bottom: -80px; left: 35%;
+            background: radial-gradient(circle, rgba(123,97,255,0.09) 0%, transparent 70%);
+            animation-duration: 20s;
+            animation-delay: -9s;
+        }
+        @keyframes orbFloat {
+            0%   { transform: translate(0px, 0px) scale(1); }
+            50%  { transform: translate(30px, 20px) scale(1.06); }
+            100% { transform: translate(-15px, 35px) scale(0.96); }
+        }
+
+        /* ─── SCANLINE ─── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(0,0,0,0.04) 3px,
+                rgba(0,0,0,0.04) 4px
+            );
+        }
+
+        /* ─── CONTENT WRAPPER (above canvas) ─── */
+        header, .container, footer, #pdf-viewer-overlay {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ─── GLASS UI ─── */
+        .glass-ui {
+            background: rgba(255,255,255,0.025);
+            backdrop-filter: blur(28px) saturate(1.5);
+            -webkit-backdrop-filter: blur(28px) saturate(1.5);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 28px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
+            transition: box-shadow 0.3s;
+        }
+        .glass-ui:hover {
+            box-shadow: 0 12px 60px rgba(0,255,136,0.07), inset 0 1px 0 rgba(255,255,255,0.10);
+        }
+
+        /* ─── PREMIUM TEXT ─── */
+        .premium-text {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 60%, #a8ff78 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ─── BUTTONS ─── */
+        .btn-action {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            font-weight: 800;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-action::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-action:hover::before { opacity: 1; }
+        .btn-action:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 14px 36px rgba(0,255,136,0.30), 0 0 0 1px rgba(0,255,136,0.18);
+        }
+        .btn-action:active { transform: translateY(0) scale(0.98); }
 
         .btn-blue {
             background: linear-gradient(135deg, #0066ff, #00d2ff);
-            color: white; font-weight: 800; transition: 0.3s;
+            color: white;
+            font-weight: 800;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-blue::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-blue:hover::before { opacity: 1; }
+        .btn-blue:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0,102,255,0.28);
         }
 
-        .btn-action:hover, .btn-blue:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0, 255, 136, 0.2); }
+        /* ─── CARD HOVER ─── */
+        .card-hover {
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, background 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .card-hover:hover {
+            border-color: var(--primary);
+            background: rgba(0,255,136,0.055);
+            transform: scale(1.045) translateY(-3px);
+            box-shadow: 0 16px 44px rgba(0,255,136,0.12), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .card-hover:active {
+            transform: scale(0.97);
+        }
 
-        .card-hover { transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-        .card-hover:hover { border-color: var(--primary); background: rgba(0, 255, 136, 0.04); transform: scale(1.03); }
-
-        .view-step { display: none; animation: fadeIn 0.5s ease-out; }
+        /* ─── VIEWS ─── */
+        .view-step { display: none; animation: fadeInUp 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
         .view-active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        #pdf-viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; z-index: 100; flex-direction: column; }
-        
-        .gallery-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .gallery-img:hover { transform: scale(1.05); border-color: var(--primary); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(22px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
 
+        /* ─── PDF OVERLAY ─── */
+        #pdf-viewer-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #0a0a0a;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        /* ─── GALLERY ─── */
+        .gallery-img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.3s;
+        }
+        .gallery-img:hover {
+            transform: scale(1.06) rotate(-1deg);
+            border-color: var(--primary);
+            box-shadow: 0 16px 48px rgba(0,255,136,0.16);
+        }
+
+        /* ─── LOGO ─── */
         .brand-logo-container { display: flex; align-items: center; gap: 15px; }
-        .header-logo-image { height: 50px; width: 50px; aspect-ratio: 1/1; object-fit: cover; border-radius: 50%; border: 1px solid var(--primary); box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
+        .header-logo-image {
+            height: 50px; width: 50px;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 1.5px solid var(--primary);
+            box-shadow: 0 0 18px rgba(0,255,136,0.28), 0 0 0 4px rgba(0,255,136,0.07);
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .header-logo-image:hover {
+            box-shadow: 0 0 36px rgba(0,255,136,0.44);
+            transform: scale(1.08) rotate(3deg);
+        }
+
+        /* ─── HEADER ─── */
+        header {
+            background: rgba(5,5,5,0.72);
+            backdrop-filter: blur(28px) saturate(1.4);
+            -webkit-backdrop-filter: blur(28px) saturate(1.4);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ─── INPUT FOCUS GLOW ─── */
+        input:focus, select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(0,255,136,0.13);
+            outline: none !important;
+        }
+
+        /* ─── STATUS BADGE PULSE ─── */
+        #statusBadge {
+            animation: badgePulse 2.5s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.22); }
+            50%       { box-shadow: 0 0 0 7px rgba(0,255,136,0.00); }
+        }
+
+        /* ─── FLOATING PARTICLES (CSS) ─── */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            animation: particleDrift linear infinite;
+            opacity: 0;
+        }
+        @keyframes particleDrift {
+            0%   { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+            10%  { opacity: 0.7; }
+            90%  { opacity: 0.5; }
+            100% { transform: translateY(-10vh) translateX(var(--drift)) scale(1.5); opacity: 0; }
+        }
+
+        /* ─── 3D TILT CARDS ─── */
+        .tilt-card {
+            transform-style: preserve-3d;
+            perspective: 800px;
+            transition: transform 0.1s ease-out;
+        }
+        .tilt-card-inner {
+            transform-style: preserve-3d;
+            transition: transform 0.15s ease-out;
+        }
+        .tilt-shine {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 65%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+        }
+        .tilt-card:hover .tilt-shine { opacity: 1; }
+
+        /* ─── ICON GLOW ─── */
+        .icon-glow {
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+        }
+        .card-hover:hover .icon-glow {
+            transform: scale(1.18) translateZ(20px);
+            box-shadow: 0 0 24px rgba(0,255,136,0.30);
+        }
+
+        /* ─── CHAPTER ROW ─── */
+        .chapter-row {
+            position: relative;
+            overflow: hidden;
+        }
+        .chapter-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transform: scaleY(0);
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            transform-origin: bottom;
+        }
+        .chapter-row:hover::before { transform: scaleY(1); }
+
+        /* ─── SCROLL REVEAL ─── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.65s cubic-bezier(0.22,1,0.36,1), transform 0.65s cubic-bezier(0.22,1,0.36,1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* ─── ADMIN TABLE ─── */
+        tbody tr {
+            transition: background 0.2s;
+        }
+        tbody tr:hover { background: rgba(0,255,136,0.03); }
+
+        /* ─── HOLOGRAPHIC BORDER (auth card) ─── */
+        #step-auth {
+            position: relative;
+        }
+        #step-auth::before {
+            content: '';
+            position: absolute;
+            inset: -1.5px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(0,255,136,0.25), rgba(0,210,255,0.18), rgba(123,97,255,0.15), rgba(0,255,136,0.25));
+            background-size: 300% 300%;
+            animation: holoBorder 5s linear infinite;
+            z-index: -1;
+        }
+        @keyframes holoBorder {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ─── LOADING SPINNER FOR PDF ─── */
+        .pdf-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(0,255,136,0.15);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── HEADER TITLE SHINE ─── */
+        .brand-title-shine {
+            position: relative;
+        }
+        .brand-title-shine::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+            background-size: 200% 100%;
+            animation: titleShine 4s ease-in-out infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes titleShine {
+            0%, 100% { background-position: -200% center; }
+            50%       { background-position: 200% center; }
+        }
+
+        /* ─── FOOTER ─── */
+        footer { position: relative; z-index: 10; }
+
+        /* ─── ABOUT SECTION ICONS ─── */
+        .about-icon {
+            display: inline-block;
+            animation: iconBounce 2s ease-in-out infinite;
+        }
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-6px); }
+        }
+
+        /* ─── GRID STAGGER ─── */
+        #subjectList .glass-ui:nth-child(1) { animation-delay: 0.04s; }
+        #subjectList .glass-ui:nth-child(2) { animation-delay: 0.09s; }
+        #subjectList .glass-ui:nth-child(3) { animation-delay: 0.14s; }
+        #subjectList .glass-ui:nth-child(4) { animation-delay: 0.19s; }
+        #subjectList .glass-ui:nth-child(5) { animation-delay: 0.24s; }
+        #subjectList .glass-ui:nth-child(6) { animation-delay: 0.29s; }
+        #subjectList .glass-ui:nth-child(7) { animation-delay: 0.34s; }
+        #subjectList .glass-ui:nth-child(8) { animation-delay: 0.39s; }
+        #subjectList .glass-ui:nth-child(9) { animation-delay: 0.44s; }
+        #subjectList .glass-ui:nth-child(10){ animation-delay: 0.49s; }
+
+        /* ─── 3D FLOATING SHAPES (hero decoration) ─── */
+        .shape-3d {
+            position: fixed;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.13;
+            animation: shape3dFloat 18s ease-in-out infinite;
+        }
+        .shape-3d:nth-child(2) { animation-duration: 23s; animation-delay: -7s; }
+        .shape-3d:nth-child(3) { animation-duration: 16s; animation-delay: -3s; }
+        @keyframes shape3dFloat {
+            0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg); }
+            33%       { transform: translateY(-30px) rotateY(120deg) rotateX(20deg); }
+            66%       { transform: translateY(15px) rotateY(240deg) rotateX(-15deg); }
+        }
+
+        /* ─── GRID LINE BG ─── */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+        }
+
+        /* ─── RIPPLE EFFECT ─── */
+        .ripple-container { position: relative; overflow: hidden; }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.22);
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* ─── CURSOR GLOW ─── */
+        #cursor-glow {
+            position: fixed;
+            width: 320px; height: 320px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 3;
+            background: radial-gradient(circle, rgba(0,255,136,0.055) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: transform 0.08s linear, opacity 0.3s;
+            opacity: 0;
+        }
+
+        /* ─── CHAPTER NUMBER BADGE ─── */
+        .ch-badge {
+            background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,210,255,0.1));
+            border: 1px solid rgba(0,255,136,0.2);
+            transition: background 0.3s, transform 0.3s;
+        }
+        .card-hover:hover .ch-badge {
+            background: linear-gradient(135deg, rgba(0,255,136,0.30), rgba(0,210,255,0.20));
+            transform: scale(1.12) rotate(-3deg);
+        }
+
+        /* ─── TYPEWRITER CURSOR ─── */
+        .type-cursor::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+            color: var(--primary);
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
-<div id="pdf-viewer-overlay">
+<!-- 3D Canvas -->
+<canvas id="three-canvas"></canvas>
+
+<!-- Grid BG -->
+<div class="grid-bg"></div>
+
+<!-- Ambient Orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- Cursor Glow -->
+<div id="cursor-glow"></div>
+
+<!-- PDF Viewer Overlay -->
+<div id="pdf-viewer-overlay" style="display:none; flex-direction:column;">
     <div class="p-4 bg-black/90 border-b border-white/10 flex justify-between items-center backdrop-blur-md sticky top-0 z-50">
         <div class="flex items-center gap-4">
             <button onclick="closePDF()" class="text-white bg-white/10 hover:bg-red-500/20 hover:text-red-500 w-10 h-10 rounded-full transition-all flex items-center justify-center">
@@ -67,7 +539,6 @@
                 <span class="text-[9px] text-[#00ff88] font-bold uppercase tracking-widest">Kola Bro Premium Access</span>
             </div>
         </div>
-        
         <div class="flex items-center gap-4">
             <a id="pdfDownloadLink" href="#" target="_blank" class="bg-[#00ff88] hover:scale-105 text-black px-6 py-2.5 rounded-full text-xs font-black flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)]">
                 <i class="fa-solid fa-download"></i> DOWNLOAD PDF
@@ -81,67 +552,83 @@
     </div>
 </div>
 
-<header class="p-4 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-50">
+<!-- Header -->
+<header class="p-4 flex items-center justify-between border-b border-white/5 sticky top-0 z-50">
     <div class="brand-logo-container cursor-pointer" onclick="location.reload()">
         <img src="https://drive.google.com/thumbnail?id=1CmuqEEPhVNyLZozJz7xS1RJrL93kZGoy" class="header-logo-image" alt="KOLA BRO Logo">
-        <h1 class="text-2xl font-black premium-text">KOLA BRO</h1>
+        <h1 class="text-2xl font-black premium-text brand-title-shine">KOLA BRO</h1>
     </div>
     <div id="statusBadge" class="hidden text-[10px] font-black bg-[#00ff88]/10 text-[#00ff88] px-4 py-2 rounded-full border border-[#00ff88]/20 uppercase tracking-widest">Active Session</div>
 </header>
 
+<!-- Main Content -->
 <div class="container mx-auto px-6 py-8 max-w-4xl">
 
+    <!-- AUTH STEP -->
     <div id="step-auth" class="view-step view-active max-w-md mx-auto glass-ui p-10 text-center mt-10">
+        <div class="text-5xl mb-4 about-icon">🔐</div>
         <h2 class="text-3xl font-extrabold mb-2 text-white italic">Premium <span class="premium-text">Vault</span></h2>
         <p class="text-gray-500 text-sm mb-8">Enter your details to explore the hub</p>
         <div class="space-y-4 text-left">
-            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
-            <input type="email" id="userEmail" placeholder="Email Address" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
-            <input type="tel" id="userPhone" placeholder="Mobile Number" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 outline-none text-white focus:border-[#00ff88]">
-            <select id="userClass" class="w-full p-4 rounded-xl bg-[#111] border border-white/10 outline-none text-white focus:border-[#00ff88]">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white transition-all duration-300">
+            <input type="email" id="userEmail" placeholder="Email Address" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white transition-all duration-300">
+            <input type="tel" id="userPhone" placeholder="Mobile Number" class="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white transition-all duration-300">
+            <select id="userClass" class="w-full p-4 rounded-xl bg-[#111] border border-white/10 text-white transition-all duration-300">
                 <option value="">Select Your Class</option>
                 <option value="9">Class 9th</option>
                 <option value="10">Class 10th</option>
                 <option value="11">Class 11th</option>
                 <option value="12">Class 12th</option>
             </select>
-            <button onclick="enterHub()" class="btn-action w-full p-5 rounded-xl uppercase tracking-tighter mt-4">Access Vault</button>
+            <button onclick="enterHub()" class="btn-action ripple-container w-full p-5 rounded-xl uppercase tracking-tighter mt-4">
+                Access Vault
+            </button>
         </div>
     </div>
 
+    <!-- ABOUT STEP -->
     <div id="step-about" class="view-step glass-ui p-8 md:p-12 text-center">
-        <div class="mb-6 text-5xl">📚</div>
+        <div class="mb-6 text-5xl about-icon">📚</div>
         <h2 class="text-3xl font-black text-white mb-6">🌐 Welcome to Learning Hub!</h2>
         <div class="text-gray-300 space-y-6 text-lg leading-relaxed text-left max-w-2xl mx-auto">
             <p>Hello everyone! 👋 My name is <b>Alok Singh</b>, and I am a <b>Class 10th student</b> 🎓.</p>
             <p>On this website, I share my <b>handwritten notes</b> 📝 to help fellow students understand concepts easily and score better 💯.</p>
             <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
-                <h3 class="font-bold text-[#00ff88] mb-3">🚀 What you’ll find here:</h3>
+                <h3 class="font-bold text-[#00ff88] mb-3">🚀 What you'll find here:</h3>
                 <ul class="space-y-2 text-sm">
                     <li>📘 Class 10 handwritten notes</li>
                     <li>📂 Study materials (PDF, PPT, etc.)</li>
                 </ul>
             </div>
         </div>
-        <button onclick="navigateTo('step-subjects')" class="btn-blue px-12 py-5 rounded-full mt-10 uppercase tracking-widest text-sm shadow-xl">Explore Now <i class="fa-solid fa-arrow-right ml-2"></i></button>
+        <button onclick="navigateTo('step-subjects')" class="btn-blue ripple-container px-12 py-5 rounded-full mt-10 uppercase tracking-widest text-sm shadow-xl">
+            Explore Now <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
     </div>
 
+    <!-- SUBJECTS STEP -->
     <div id="step-subjects" class="view-step">
         <h2 class="text-4xl font-black text-white italic mb-10">Master <span class="premium-text">Catalogue</span></h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="subjectList"></div>
     </div>
 
+    <!-- CHAPTERS STEP -->
     <div id="step-chapters" class="view-step">
         <div class="flex items-center justify-between mb-10">
-            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
             <h2 id="activeSubjectName" class="text-xl font-black premium-text uppercase italic"></h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="chapterGrid"></div>
     </div>
 
+    <!-- GALLERY STEP -->
     <div id="step-gallery" class="view-step">
         <div class="flex items-center justify-between mb-10">
-            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#00ff88] font-bold text-xs flex items-center gap-2 transition-colors">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
             <h2 class="text-xl font-black premium-text uppercase italic">PHOTO GALLERY</h2>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -149,18 +636,29 @@
         </div>
     </div>
 
+    <!-- ADMIN STEP -->
     <div id="step-admin" class="view-step glass-ui p-6">
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <h2 class="text-2xl font-black text-white italic"><i class="fa-solid fa-user-shield text-[#00ff88] mr-2"></i> Visitor <span class="premium-text">Logs</span></h2>
+            <h2 class="text-2xl font-black text-white italic">
+                <i class="fa-solid fa-user-shield text-[#00ff88] mr-2"></i> Visitor <span class="premium-text">Logs</span>
+            </h2>
             <div class="flex gap-3">
-                <button onclick="exportToCSV()" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"><i class="fa-solid fa-file-csv text-[#00ff88]"></i> DOWNLOAD CSV</button>
-                <button onclick="location.reload()" class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-2 rounded-xl text-xs font-bold transition-all">LOGOUT</button>
+                <button onclick="exportToCSV()" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-file-csv text-[#00ff88]"></i> DOWNLOAD CSV
+                </button>
+                <button onclick="location.reload()" class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:bg-red-500/20">LOGOUT</button>
             </div>
         </div>
         <div class="overflow-x-auto rounded-2xl border border-white/5">
             <table class="w-full text-left text-sm">
                 <thead class="bg-white/5 text-[#00ff88] uppercase text-[10px] tracking-widest">
-                    <tr><th class="p-4">Name & Email</th><th class="p-4">Phone</th><th class="p-4">Class</th><th class="p-4">Date</th><th class="p-4 text-center">Action</th></tr>
+                    <tr>
+                        <th class="p-4">Name & Email</th>
+                        <th class="p-4">Phone</th>
+                        <th class="p-4">Class</th>
+                        <th class="p-4">Date</th>
+                        <th class="p-4 text-center">Action</th>
+                    </tr>
                 </thead>
                 <tbody id="visitorTableBody" class="text-gray-400 divide-y divide-white/5"></tbody>
             </table>
@@ -169,145 +667,620 @@
 
 </div>
 
+<!-- Footer -->
 <footer class="mt-20 p-10 border-t border-white/5 text-center">
     <p class="text-gray-600 text-xs mb-4">© 2026 KOLA BRO Premium Education</p>
     <button onclick="promptAdmin()" class="text-[10px] text-gray-700 hover:text-[#00ff88] transition-all border border-gray-800 hover:border-[#00ff88]/30 px-3 py-1 rounded-lg uppercase tracking-widest">Admin Login</button>
 </footer>
 
+<!-- ─── THREE.JS 3D BACKGROUND ─── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+    const canvas = document.getElementById('three-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 0, 18);
+
+    // ─── LIGHTS ───
+    const ambientLight = new THREE.AmbientLight(0x00ff88, 0.18);
+    scene.add(ambientLight);
+
+    const pointLight1 = new THREE.PointLight(0x00ffee, 1.2, 60);
+    pointLight1.position.set(10, 12, 10);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x7b61ff, 0.9, 50);
+    pointLight2.position.set(-12, -8, 8);
+    scene.add(pointLight2);
+
+    const pointLight3 = new THREE.PointLight(0x00ff88, 0.6, 40);
+    pointLight3.position.set(0, -14, 6);
+    scene.add(pointLight3);
+
+    // ─── WIREFRAME ICOSAHEDRON (center hero) ───
+    const icoGeo = new THREE.IcosahedronGeometry(3.5, 1);
+    const icoMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff88,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.13,
+        emissive: 0x00ff88,
+        emissiveIntensity: 0.4,
+    });
+    const icosahedron = new THREE.Mesh(icoGeo, icoMat);
+    icosahedron.position.set(7, 2, -6);
+    scene.add(icosahedron);
+
+    // ─── SOLID ICOSAHEDRON (inner glow) ───
+    const icoInnerGeo = new THREE.IcosahedronGeometry(3.2, 0);
+    const icoInnerMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff88,
+        transparent: true,
+        opacity: 0.028,
+        emissive: 0x00ffee,
+        emissiveIntensity: 0.2,
+    });
+    const icosahedronInner = new THREE.Mesh(icoInnerGeo, icoInnerMat);
+    icosahedronInner.position.set(7, 2, -6);
+    scene.add(icosahedronInner);
+
+    // ─── TORUS KNOT ───
+    const torusKnotGeo = new THREE.TorusKnotGeometry(2.2, 0.55, 128, 20, 2, 3);
+    const torusKnotMat = new THREE.MeshStandardMaterial({
+        color: 0x00d2ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.12,
+        emissive: 0x00d2ff,
+        emissiveIntensity: 0.3,
+    });
+    const torusKnot = new THREE.Mesh(torusKnotGeo, torusKnotMat);
+    torusKnot.position.set(-8, -3, -8);
+    scene.add(torusKnot);
+
+    // ─── OCTAHEDRON ───
+    const octaGeo = new THREE.OctahedronGeometry(2.4, 0);
+    const octaMat = new THREE.MeshStandardMaterial({
+        color: 0x7b61ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.14,
+        emissive: 0x7b61ff,
+        emissiveIntensity: 0.35,
+    });
+    const octahedron = new THREE.Mesh(octaGeo, octaMat);
+    octahedron.position.set(-6, 6, -10);
+    scene.add(octahedron);
+
+    // ─── DODECAHEDRON ───
+    const dodecaGeo = new THREE.DodecahedronGeometry(1.8, 0);
+    const dodecaMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff88,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.11,
+        emissive: 0x00ff88,
+        emissiveIntensity: 0.25,
+    });
+    const dodecahedron = new THREE.Mesh(dodecaGeo, dodecaMat);
+    dodecahedron.position.set(4, -6, -5);
+    scene.add(dodecahedron);
+
+    // ─── TORUS ───
+    const torusGeo = new THREE.TorusGeometry(2.5, 0.35, 24, 80);
+    const torusMat = new THREE.MeshStandardMaterial({
+        color: 0x00ffee,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.10,
+        emissive: 0x00ffee,
+        emissiveIntensity: 0.2,
+    });
+    const torus = new THREE.Mesh(torusGeo, torusMat);
+    torus.position.set(-3, 5, -12);
+    torus.rotation.x = Math.PI * 0.3;
+    scene.add(torus);
+
+    // ─── PARTICLE FIELD ───
+    const particleCount = 320;
+    const positions = new Float32Array(particleCount * 3);
+    const particleSizes = new Float32Array(particleCount);
+    for (let i = 0; i < particleCount; i++) {
+        positions[i * 3]     = (Math.random() - 0.5) * 70;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 70;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 40 - 10;
+        particleSizes[i]     = Math.random() * 1.8 + 0.4;
+    }
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeo.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+    const particleMat = new THREE.PointsMaterial({
+        color: 0x00ff88,
+        size: 0.09,
+        transparent: true,
+        opacity: 0.55,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
+
+    // ─── SECOND PARTICLE FIELD (blue tint) ───
+    const pos2 = new Float32Array(200 * 3);
+    for (let i = 0; i < 200; i++) {
+        pos2[i * 3]     = (Math.random() - 0.5) * 80;
+        pos2[i * 3 + 1] = (Math.random() - 0.5) * 60;
+        pos2[i * 3 + 2] = (Math.random() - 0.5) * 30 - 8;
+    }
+    const pGeo2 = new THREE.BufferGeometry();
+    pGeo2.setAttribute('position', new THREE.BufferAttribute(pos2, 3));
+    const pMat2 = new THREE.PointsMaterial({
+        color: 0x00d2ff,
+        size: 0.07,
+        transparent: true,
+        opacity: 0.38,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+    const particles2 = new THREE.Points(pGeo2, pMat2);
+    scene.add(particles2);
+
+    // ─── CONNECTING LINES GRID ───
+    const lineMat = new THREE.LineBasicMaterial({
+        color: 0x00ff88,
+        transparent: true,
+        opacity: 0.045,
+        blending: THREE.AdditiveBlending,
+    });
+    const linePoints = [];
+    for (let i = 0; i < 14; i++) {
+        const x = (i / 13 - 0.5) * 60;
+        linePoints.push(new THREE.Vector3(x, -30, -18), new THREE.Vector3(x, 30, -18));
+    }
+    for (let i = 0; i < 10; i++) {
+        const y = (i / 9 - 0.5) * 60;
+        linePoints.push(new THREE.Vector3(-30, y, -18), new THREE.Vector3(30, y, -18));
+    }
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+    const gridLines = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(gridLines);
+
+    // ─── SMALL FLOATING SPHERES ───
+    const sphereGroup = new THREE.Group();
+    const sphereData = [];
+    for (let i = 0; i < 18; i++) {
+        const r = Math.random() * 0.22 + 0.07;
+        const sg = new THREE.SphereGeometry(r, 10, 10);
+        const sm = new THREE.MeshStandardMaterial({
+            color: i % 3 === 0 ? 0x00ff88 : i % 3 === 1 ? 0x00d2ff : 0x7b61ff,
+            transparent: true,
+            opacity: Math.random() * 0.5 + 0.25,
+            emissive: i % 3 === 0 ? 0x00ff88 : i % 3 === 1 ? 0x00d2ff : 0x7b61ff,
+            emissiveIntensity: 0.7,
+        });
+        const sphere = new THREE.Mesh(sg, sm);
+        const angle = (i / 18) * Math.PI * 2;
+        const rad = Math.random() * 14 + 4;
+        sphere.position.set(
+            Math.cos(angle) * rad,
+            (Math.random() - 0.5) * 16,
+            Math.sin(angle) * rad - 10
+        );
+        sphereData.push({
+            mesh: sphere,
+            speed: Math.random() * 0.008 + 0.003,
+            phase: Math.random() * Math.PI * 2,
+            radius: rad,
+            angle: angle,
+        });
+        sphereGroup.add(sphere);
+    }
+    scene.add(sphereGroup);
+
+    // ─── RING ───
+    const ringGeo = new THREE.TorusGeometry(5, 0.04, 4, 100);
+    const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00ff88,
+        transparent: true,
+        opacity: 0.10,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.set(7, 2, -7);
+    ring.rotation.x = Math.PI * 0.4;
+    scene.add(ring);
+
+    const ring2Geo = new THREE.TorusGeometry(3.2, 0.03, 4, 80);
+    const ring2Mat = new THREE.MeshBasicMaterial({
+        color: 0x00d2ff,
+        transparent: true,
+        opacity: 0.08,
+    });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.position.set(7, 2, -7);
+    ring2.rotation.x = Math.PI * 0.6;
+    ring2.rotation.y = Math.PI * 0.2;
+    scene.add(ring2);
+
+    // ─── MOUSE PARALLAX ───
+    let mouseX = 0, mouseY = 0;
+    let targetX = 0, targetY = 0;
+    document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth  - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    // ─── ANIMATE ───
+    let clock = { t: 0 };
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = performance.now() * 0.001;
+
+        // smooth mouse
+        targetX += (mouseX - targetX) * 0.04;
+        targetY += (mouseY - targetY) * 0.04;
+
+        // camera parallax
+        camera.position.x = targetX * 1.8;
+        camera.position.y = -targetY * 1.2;
+        camera.lookAt(0, 0, 0);
+
+        // Icosahedron
+        icosahedron.rotation.x = t * 0.14;
+        icosahedron.rotation.y = t * 0.20;
+        icosahedronInner.rotation.x = t * 0.14;
+        icosahedronInner.rotation.y = t * 0.20;
+
+        // Torus knot
+        torusKnot.rotation.x = t * 0.09;
+        torusKnot.rotation.y = t * 0.13;
+        torusKnot.rotation.z = t * 0.07;
+
+        // Octahedron
+        octahedron.rotation.x = t * 0.16;
+        octahedron.rotation.z = t * 0.10;
+
+        // Dodecahedron
+        dodecahedron.rotation.y = t * 0.18;
+        dodecahedron.rotation.x = t * 0.12;
+
+        // Torus
+        torus.rotation.z = t * 0.08;
+        torus.rotation.y = t * 0.05;
+
+        // Rings
+        ring.rotation.z  = t * 0.10;
+        ring2.rotation.z = -t * 0.08;
+        ring2.rotation.x = Math.PI * 0.6 + Math.sin(t * 0.5) * 0.1;
+
+        // Particles drift
+        particles.rotation.y  = t * 0.018;
+        particles.rotation.x  = t * 0.008;
+        particles2.rotation.y = -t * 0.012;
+        particles2.rotation.x = t * 0.006;
+
+        // Grid lines breathe
+        gridLines.material.opacity = 0.035 + Math.sin(t * 0.5) * 0.01;
+        gridLines.rotation.z = t * 0.005;
+
+        // Floating spheres orbit
+        sphereData.forEach((s) => {
+            s.angle += s.speed;
+            s.mesh.position.x = Math.cos(s.angle) * s.radius;
+            s.mesh.position.y = s.mesh.position.y + Math.sin(t * 0.4 + s.phase) * 0.005;
+            s.mesh.position.z = Math.sin(s.angle) * s.radius - 10;
+            s.mesh.material.opacity = 0.25 + Math.abs(Math.sin(t * 0.4 + s.phase)) * 0.35;
+        });
+
+        // Lights animate
+        pointLight1.position.x = Math.sin(t * 0.4) * 14;
+        pointLight1.position.y = Math.cos(t * 0.3) * 10;
+        pointLight2.position.x = Math.cos(t * 0.35) * -14;
+        pointLight2.position.y = Math.sin(t * 0.28) * -9;
+        pointLight3.intensity = 0.5 + Math.sin(t * 0.7) * 0.2;
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+})();
+</script>
+
+<!-- ─── CURSOR GLOW TRACKER ─── -->
+<script>
+(function() {
+    const glow = document.getElementById('cursor-glow');
+    let visible = false;
+    document.addEventListener('mousemove', (e) => {
+        glow.style.left = e.clientX + 'px';
+        glow.style.top  = e.clientY + 'px';
+        if (!visible) { glow.style.opacity = '1'; visible = true; }
+    });
+    document.addEventListener('mouseleave', () => {
+        glow.style.opacity = '0'; visible = false;
+    });
+})();
+</script>
+
+<!-- ─── CSS PARTICLES SPAWNER ─── -->
+<script>
+(function() {
+    function spawnParticle() {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 4 + 2;
+        const colors = ['#00ff88','#00ffee','#7b61ff','#00d2ff','#a8ff78'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const left = Math.random() * 100;
+        const duration = Math.random() * 10 + 7;
+        const drift = (Math.random() - 0.5) * 160;
+        p.style.cssText = `
+            width:${size}px; height:${size}px;
+            left:${left}vw; bottom:-10px;
+            background:${color};
+            box-shadow: 0 0 ${size * 2}px ${color};
+            --drift: ${drift}px;
+            animation-duration: ${duration}s;
+            animation-delay: 0s;
+        `;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), duration * 1000);
+    }
+    setInterval(spawnParticle, 600);
+    for (let i = 0; i < 10; i++) setTimeout(spawnParticle, i * 200);
+})();
+</script>
+
+<!-- ─── 3D TILT ON CARDS ─── -->
+<script>
+function initTilt() {
+    document.querySelectorAll('.tilt-card').forEach(card => {
+        const inner = card.querySelector('.tilt-card-inner') || card;
+        const shine = card.querySelector('.tilt-shine');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top  + rect.height / 2;
+            const dx = (e.clientX - cx) / (rect.width / 2);
+            const dy = (e.clientY - cy) / (rect.height / 2);
+            inner.style.transform = `rotateY(${dx * 12}deg) rotateX(${-dy * 10}deg) scale(1.04)`;
+            if (shine) {
+                shine.style.background = `radial-gradient(circle at ${(dx + 1) * 50}% ${(dy + 1) * 50}%, rgba(255,255,255,0.14) 0%, transparent 65%)`;
+                shine.style.opacity = '1';
+            }
+        });
+        card.addEventListener('mouseleave', () => {
+            inner.style.transform = '';
+            if (shine) shine.style.opacity = '0';
+        });
+    });
+}
+</script>
+
+<!-- ─── RIPPLE EFFECT ─── -->
+<script>
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ripple-container');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const size = Math.max(rect.width, rect.height) * 1.4;
+    r.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${e.clientX - rect.left - size/2}px;
+        top:${e.clientY - rect.top  - size/2}px;
+    `;
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+});
+</script>
+
+<!-- ─── SCROLL REVEAL ─── -->
+<script>
+(function() {
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(en => {
+            if (en.isIntersecting) en.target.classList.add('visible');
+        });
+    }, { threshold: 0.12 });
+    function attachReveal() {
+        document.querySelectorAll('.glass-ui:not(.reveal)').forEach(el => {
+            el.classList.add('reveal');
+            obs.observe(el);
+        });
+    }
+    setInterval(attachReveal, 800);
+    attachReveal();
+})();
+</script>
+
+<!-- ─── FIREBASE + MAIN APP ─── -->
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query, orderBy }
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAwKGhoQGjcTI1kHYuYlGGI_vGlojCgeOk",
-      authDomain: "kola26-70d76.firebaseapp.com",
-      projectId: "kola26-70d76",
-      storageBucket: "kola26-70d76.firebasestorage.app",
-      messagingSenderId: "27350698262",
-      appId: "1:27350698262:web:96b0f2fc0865db19252837"
+        apiKey: "AIzaSyAwKGhoQGjcTI1kHYuYlGGI_vGlojCgeOk",
+        authDomain: "kola26-70d76.firebaseapp.com",
+        projectId: "kola26-70d76",
+        storageBucket: "kola26-70d76.firebasestorage.app",
+        messagingSenderId: "27350698262",
+        appId: "1:27350698262:web:96b0f2fc0865db19252837"
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
     let allVisitors = [];
 
     window.enterHub = async function() {
-        const name = document.getElementById('userName').value;
-        const email = document.getElementById('userEmail').value;
-        const phone = document.getElementById('userPhone').value;
+        const name      = document.getElementById('userName').value;
+        const email     = document.getElementById('userEmail').value;
+        const phone     = document.getElementById('userPhone').value;
         const className = document.getElementById('userClass').value;
-        if(!name || !email || !phone || !className) return alert("Please fill all details!");
+        if (!name || !email || !phone || !className) return alert("Please fill all details!");
         try {
             await addDoc(collection(db, "visitors"), { name, email, phone, class: className, time: new Date() });
             document.getElementById("statusBadge").classList.remove('hidden');
             renderSubjects();
             navigateTo('step-about');
         } catch (e) { alert("Error: " + e.message); }
-    }
+    };
 
     window.promptAdmin = function() {
         const key = prompt("Enter Admin Key:");
         if (key === "alokbro") { loadAdminData(); navigateTo('step-admin'); }
         else if (key !== null) { alert("Access Denied"); }
-    }
+    };
 
     function loadAdminData() {
         onSnapshot(query(collection(db, "visitors"), orderBy("time", "desc")), (snapshot) => {
             allVisitors = [];
             const tbody = document.getElementById("visitorTableBody");
             tbody.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                allVisitors.push({ id: doc.id, ...data });
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                allVisitors.push({ id: docSnap.id, ...data });
                 tbody.innerHTML += `
-                    <tr class="hover:bg-white/[0.02] transition-colors">
-                        <td class="p-4 text-white font-bold">${data.name}<br><span class="text-[10px] text-gray-500 font-normal">${data.email}</span></td>
-                        <td class="p-4 text-xs">${data.phone}</td>
-                        <td class="p-4 text-xs">Class ${data.class}</td>
-                        <td class="p-4 text-[10px]">${data.time?.toDate().toLocaleDateString() || "N/A"}</td>
-                        <td class="p-4 text-center"><button onclick="deleteVisitor('${doc.id}')" class="text-red-500 hover:text-red-400 transition-all"><i class="fa-solid fa-trash"></i></button></td>
-                    </tr>`;
+                <tr class="hover:bg-white/[0.02] transition-colors">
+                    <td class="p-4 text-white font-bold">${data.name}<br>
+                        <span class="text-[10px] text-gray-500 font-normal">${data.email}</span></td>
+                    <td class="p-4 text-xs">${data.phone}</td>
+                    <td class="p-4 text-xs">Class ${data.class}</td>
+                    <td class="p-4 text-[10px]">${data.time?.toDate().toLocaleDateString() || "N/A"}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteVisitor('${docSnap.id}')" class="text-red-500 hover:text-red-400 transition-all">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
             });
         });
     }
 
-    window.deleteVisitor = async (id) => { if(confirm("Delete this form?")) await deleteDoc(doc(db, "visitors", id)); }
+    window.deleteVisitor = async (id) => {
+        if (confirm("Delete this record?")) await deleteDoc(doc(db, "visitors", id));
+    };
 
     window.exportToCSV = () => {
         let csv = "Name,Email,Phone,Class,Date\n";
-        allVisitors.forEach(v => { csv += `${v.name},${v.email},${v.phone},${v.class},${v.time?.toDate().toLocaleDateString()}\n`; });
+        allVisitors.forEach(v => {
+            csv += `${v.name},${v.email},${v.phone},${v.class},${v.time?.toDate().toLocaleDateString()}\n`;
+        });
         const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = "KolaBro_Data.csv"; a.click();
-    }
+        const url  = window.URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = "KolaBro_Data.csv"; a.click();
+    };
 
+    // ─── SUBJECTS ───
     const subjects = [
-        { name: 'Physics', icon: 'fa-atom' }, { name: 'Chemistry', icon: 'fa-flask' },
-        { name: 'Biology', icon: 'fa-dna' }, { name: 'Math', icon: 'fa-calculator' },
-        { name: 'History', icon: 'fa-landmark' }, { name: 'Geography', icon: 'fa-earth-americas' },
-        { name: 'Computer', icon: 'fa-laptop-code' }, { name: 'Hindi', icon: 'fa-language' }, 
-        { name: 'English', icon: 'fa-book-open' }, { name: 'Gallery', icon: 'fa-image' }
+        { name: 'Physics',    icon: 'fa-atom' },
+        { name: 'Chemistry',  icon: 'fa-flask' },
+        { name: 'Biology',    icon: 'fa-dna' },
+        { name: 'Math',       icon: 'fa-calculator' },
+        { name: 'History',    icon: 'fa-landmark' },
+        { name: 'Geography',  icon: 'fa-earth-americas' },
+        { name: 'Computer',   icon: 'fa-laptop-code' },
+        { name: 'Hindi',      icon: 'fa-language' },
+        { name: 'English',    icon: 'fa-book-open' },
+        { name: 'Gallery',    icon: 'fa-image' },
     ];
 
     window.navigateTo = (stepId) => {
         document.querySelectorAll('.view-step').forEach(el => el.classList.remove('view-active'));
-        document.getElementById(stepId).classList.add('view-active');
+        const target = document.getElementById(stepId);
+        target.classList.add('view-active');
+        // re-trigger animation
+        target.style.animation = 'none';
+        target.offsetHeight; // reflow
+        target.style.animation = '';
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+        setTimeout(() => initTilt(), 300);
+    };
 
-    // UPDATED: Direct Browser Viewing Logic
     window.viewPDF = (url, title = "Study Material") => {
-        if(url === '#' || !url) {
+        if (url === '#' || !url) {
             alert("This chapter will be uploaded soon!");
             return;
         }
         const directUrl = url.replace('/view?usp=drivesdk', '/preview');
         window.open(directUrl, '_blank');
-    }
+    };
 
     window.closePDF = () => {
         document.getElementById('pdf-viewer-overlay').style.display = 'none';
         document.getElementById('pdfFrame').src = '';
         document.body.style.overflow = 'auto';
-    }
+    };
 
     window.renderSubjects = () => {
-        document.getElementById("subjectList").innerHTML = subjects.map(s => `
-            <div class="glass-ui card-hover p-8 text-center" onclick="openSubject('${s.name}')">
-                <div class="w-16 h-16 bg-[#00ff88]/10 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-[#00ff88]/20">
+        document.getElementById("subjectList").innerHTML = subjects.map((s, i) => `
+            <div class="glass-ui card-hover tilt-card p-8 text-center relative overflow-hidden"
+                 onclick="openSubject('${s.name}')"
+                 style="animation: fadeInUp 0.5s ${i * 0.07}s both;">
+                <div class="tilt-shine"></div>
+                <div class="w-16 h-16 bg-[#00ff88]/10 rounded-2xl flex items-center justify-center mx-auto mb-5
+                            border border-[#00ff88]/20 icon-glow">
                     <i class="fa-solid ${s.icon} text-3xl text-[#00ff88]"></i>
                 </div>
                 <h3 class="font-bold text-white uppercase text-[10px] tracking-widest">${s.name}</h3>
             </div>`).join('');
-    }
+        setTimeout(() => initTilt(), 200);
+    };
 
     window.openSubject = (subjectName) => {
-        if(subjectName === 'Gallery') { navigateTo('step-gallery'); return; }
+        if (subjectName === 'Gallery') { navigateTo('step-gallery'); return; }
         document.getElementById("activeSubjectName").innerText = subjectName;
         let html = "";
-        for(let i=1; i<=7; i++) {
+        for (let i = 1; i <= 7; i++) {
             let pdfLink = "#";
-            if(subjectName === 'Physics' && i === 1) {
+            if (subjectName === 'Physics'   && i === 1)
                 pdfLink = "https://drive.google.com/file/d/1CbKQ7KsGoO8-RisqAU1YTXHke9aQ67kb/view?usp=drivesdk";
-            } else if(subjectName === 'Geography' && i === 1) {
+            if (subjectName === 'Geography' && i === 1)
                 pdfLink = "https://drive.google.com/file/d/1RwwV5CsNr6v3HyFpN0FSVf_wdDVDrFZm/view?usp=drivesdk";
-            }
 
+            const locked = pdfLink === '#';
             html += `
-            <div class="glass-ui card-hover p-6 flex items-center justify-between" onclick="viewPDF('${pdfLink}', '${subjectName} Ch-${i}')">
+            <div class="glass-ui card-hover chapter-row tilt-card p-6 flex items-center justify-between relative overflow-hidden"
+                 onclick="viewPDF('${pdfLink}', '${subjectName} Ch-${i}')"
+                 style="animation: fadeInUp 0.4s ${i * 0.06}s both;">
+                <div class="tilt-shine"></div>
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-[#00ff88] text-xs border border-white/5">${i}</div>
+                    <div class="w-10 h-10 rounded-xl ch-badge flex items-center justify-center font-black text-[#00ff88] text-xs">
+                        ${i}
+                    </div>
                     <h4 class="text-white font-bold text-sm">Chapter ${i}</h4>
                 </div>
-                <div class="text-[#00ff88] ${pdfLink === '#' ? 'opacity-20' : ''}"><i class="fa-solid ${pdfLink === '#' ? 'fa-lock' : 'fa-file-pdf'} text-lg"></i></div>
+                <div class="text-[#00ff88] ${locked ? 'opacity-20' : ''}">
+                    <i class="fa-solid ${locked ? 'fa-lock' : 'fa-file-pdf'} text-lg transition-transform"></i>
+                </div>
             </div>`;
         }
         document.getElementById("chapterGrid").innerHTML = html;
         navigateTo('step-chapters');
-    }
+        setTimeout(() => initTilt(), 300);
+    };
 </script>
+
+<!-- Ad script (preserved) -->
 <script async="async" data-cfasync="false" src="https://pl29033139.profitablecpmratenetwork.com/4d1e6bc83b89e3bc5eb700742fd65286/invoke.js"></script>
 <div id="container-4d1e6bc83b89e3bc5eb700742fd65286"></div>
+
 </body>
-        </html>
-        
+</html>
