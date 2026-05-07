@@ -1,0 +1,234 @@
+<!-- ════════════════════════════════════════════
+     FEEDBACK PAGE
+════════════════════════════════════════════ -->
+<div id="step-feedback" class="view-step" style="position:relative;z-index:1;">
+    <div class="container mx-auto px-6 py-8 max-w-4xl">
+        <div class="flex items-center justify-between mb-8">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#9932C9] font-bold text-xs flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 class="neon-label neon-label-purple" style="font-size:14px;">Feedback</h2>
+        </div>
+
+        <div class="glass-ui p-8 max-w-2xl mx-auto mb-8">
+            <div class="text-center mb-7">
+                <div class="text-5xl mb-3">💬</div>
+                <h3 class="text-2xl font-black text-white mb-1">Share Your Feedback</h3>
+                <p class="text-gray-500 text-sm">Rate the notes &amp; tell us how to improve</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="text-gray-400 text-xs uppercase tracking-widest mb-2 block">Related PDF / Subject</label>
+                    <select id="fb-subject" class="w-full p-4 rounded-xl border border-white/10 outline-none text-white text-sm" style="background:#0d0d0d;">
+                        <option value="">-- Select Subject / PDF --</option>
+                        <option>Physics Notes</option>
+                        <option>Chemistry Notes</option>
+                        <option>Biology Notes</option>
+                        <option>Math Notes</option>
+                        <option>History Notes</option>
+                        <option>Geography Notes</option>
+                        <option>Computer Notes</option>
+                        <option>Hindi Notes</option>
+                        <option>English Notes</option>
+                        <option>Civics Notes</option>
+                        <option>Economy Notes</option>
+                        <option>General / Website</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-gray-400 text-xs uppercase tracking-widest mb-3 block">Your Rating</label>
+                    <div class="flex gap-1" id="fb-stars-row">
+                        <span class="fb-star" onclick="setFbStar(1)" data-v="1">★</span>
+                        <span class="fb-star" onclick="setFbStar(2)" data-v="2">★</span>
+                        <span class="fb-star" onclick="setFbStar(3)" data-v="3">★</span>
+                        <span class="fb-star" onclick="setFbStar(4)" data-v="4">★</span>
+                        <span class="fb-star" onclick="setFbStar(5)" data-v="5">★</span>
+                    </div>
+                    <input type="hidden" id="fb-rating-val" value="0">
+                </div>
+                <div>
+                    <label class="text-gray-400 text-xs uppercase tracking-widest mb-2 block">Category</label>
+                    <div class="flex flex-wrap gap-2" id="fb-cats">
+                        <span class="fb-cat" onclick="pickFbCat(this,'Helpful Notes')">👍 Helpful</span>
+                        <span class="fb-cat" onclick="pickFbCat(this,'Need More Content')">📚 Need More</span>
+                        <span class="fb-cat" onclick="pickFbCat(this,'Hard to Read')">😕 Hard to Read</span>
+                        <span class="fb-cat" onclick="pickFbCat(this,'Excellent Quality')">🌟 Excellent</span>
+                        <span class="fb-cat" onclick="pickFbCat(this,'Suggestion')">💡 Suggestion</span>
+                    </div>
+                    <input type="hidden" id="fb-cat-val" value="">
+                </div>
+                <div>
+                    <label class="text-gray-400 text-xs uppercase tracking-widest mb-2 block">Your Message</label>
+                    <textarea id="fb-message" rows="4" placeholder="Write your feedback here…" class="w-full p-4 rounded-xl border border-white/10 outline-none text-white text-sm resize-none" style="background:rgba(255,255,255,0.04);font-family:inherit;" onfocus="this.style.borderColor='rgba(153,50,201,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+                </div>
+                <div id="fb-user-row" class="p-3 rounded-xl text-xs text-gray-500" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05)">
+                    <i class="fa-solid fa-user mr-1"></i> Submitting as: <span id="fb-user-name" class="text-[#9932C9] font-bold">—</span>
+                </div>
+                <button onclick="submitFeedbackLocal()" class="btn-action w-full p-4 rounded-xl uppercase tracking-wider text-sm font-black flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+                </button>
+                <div id="fb-result" class="hidden p-3 rounded-xl text-sm font-bold text-center"></div>
+            </div>
+        </div>
+
+        <!-- Public feedback list -->
+        <div class="max-w-2xl mx-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-white font-black text-base flex items-center gap-2"><i class="fa-solid fa-comments text-pink-400"></i> Community Feedback</h3>
+                <span class="text-gray-600 text-xs" id="fb-count"></span>
+            </div>
+            <div id="fb-public-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PROGRESS TRACKER PAGE
+════════════════════════════════════════════ -->
+<div id="step-progress" class="view-step" style="position:relative;z-index:1;">
+    <div class="container mx-auto px-6 py-8 max-w-4xl">
+        <div class="flex items-center justify-between mb-8">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#9932C9] font-bold text-xs flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 class="neon-label neon-label-purple" style="font-size:14px;">Progress Tracker</h2>
+        </div>
+
+        <!-- Overall progress -->
+        <div class="glass-ui p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-white font-black text-lg">Overall Progress</h3>
+                    <p class="text-gray-500 text-sm">Across all subjects</p>
+                </div>
+                <div id="prog-overall-pct" class="text-4xl font-black orbitron" style="color:#9932C9">0%</div>
+            </div>
+            <div class="subject-prog-bar">
+                <div id="prog-overall-bar" class="subject-prog-fill" style="width:0%;background:linear-gradient(90deg,#9932C9,#b44de0);"></div>
+            </div>
+            <div class="flex justify-between mt-3 text-xs text-gray-500">
+                <span id="prog-done-count">0 chapters done</span>
+                <span id="prog-total-count">0 total</span>
+            </div>
+        </div>
+
+        <!-- Per-subject progress -->
+        <div id="prog-subjects-list" class="space-y-4"></div>
+
+        <div class="glass-ui p-5 mt-6 text-center">
+            <p class="text-gray-500 text-xs mb-3 uppercase tracking-widest">How to mark a chapter done</p>
+            <p class="text-gray-400 text-sm">Open any subject → open a chapter → tap the <span class="text-[#9932C9] font-bold">✅ Mark Done</span> button in the PDF viewer</p>
+            <button onclick="resetProgress()" class="mt-4 text-xs text-red-500/50 hover:text-red-400 transition-all">Reset All Progress</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PROFILE + XP + BADGES PAGE
+════════════════════════════════════════════ -->
+<div id="step-profile" class="view-step" style="position:relative;z-index:1;">
+    <div class="container mx-auto px-6 py-8 max-w-4xl">
+        <div class="flex items-center justify-between mb-8">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#9932C9] font-bold text-xs flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 class="neon-label neon-label-purple" style="font-size:14px;">My Profile</h2>
+        </div>
+
+        <!-- Profile card -->
+        <div class="glass-ui p-6 mb-6">
+            <div class="flex items-center gap-5 mb-6">
+                <div id="prof-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#9932C9);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:white;flex-shrink:0;border:3px solid rgba(153,50,201,0.3);"></div>
+                <div>
+                    <h3 id="prof-name" class="text-white font-black text-xl mb-0.5">—</h3>
+                    <p id="prof-class" class="text-gray-500 text-sm mb-1">—</p>
+                    <div class="flex items-center gap-2">
+                        <span id="prof-level-badge" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:900;">Level 1</span>
+                        <span id="prof-streak-badge" style="background:rgba(255,107,0,0.15);color:#ff6b00;border:1px solid rgba(255,107,0,0.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:900;">🔥 0 day streak</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XP bar -->
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-gray-500 text-xs uppercase tracking-widest">XP Progress</span>
+                <span id="prof-xp-txt" class="text-[#a78bfa] text-xs font-black">0 / 100 XP</span>
+            </div>
+            <div class="xp-bar-bg mb-1">
+                <div id="prof-xp-bar" class="xp-bar-fill" style="width:0%"></div>
+            </div>
+            <p class="text-gray-600 text-xs" id="prof-xp-next">50 XP to next level</p>
+        </div>
+
+        <!-- Stats grid -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="glass-ui p-4 text-center">
+                <p id="st-chap" class="text-2xl font-black orbitron" style="color:#9932C9">0</p>
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Chapters</p>
+            </div>
+            <div class="glass-ui p-4 text-center">
+                <p id="st-games" class="text-2xl font-black orbitron" style="color:#a78bfa">0</p>
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Games Played</p>
+            </div>
+            <div class="glass-ui p-4 text-center">
+                <p id="st-feedback" class="text-2xl font-black orbitron" style="color:#f59e0b">0</p>
+                <p class="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Feedbacks</p>
+            </div>
+        </div>
+
+        <!-- Streak Calendar -->
+        <div class="glass-ui p-6 mb-6">
+            <h3 class="text-white font-black text-base mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-fire text-orange-400"></i> 7-Day Streak
+            </h3>
+            <div class="flex gap-2 justify-center" id="streak-calendar"></div>
+            <p id="streak-msg" class="text-center text-gray-500 text-xs mt-3">Visit every day to build your streak!</p>
+        </div>
+
+        <!-- Badges -->
+        <div class="glass-ui p-6">
+            <h3 class="text-white font-black text-base mb-5 flex items-center gap-2">
+                <i class="fa-solid fa-trophy text-yellow-400"></i> Achievement Badges
+            </h3>
+            <div class="grid grid-cols-3 md:grid-cols-4 gap-3" id="badges-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     STUDY TIMETABLE PAGE
+════════════════════════════════════════════ -->
+<div id="step-timetable" class="view-step" style="position:relative;z-index:1;">
+    <div class="container mx-auto px-6 py-8 max-w-4xl">
+        <div class="flex items-center justify-between mb-8">
+            <button onclick="navigateTo('step-subjects')" class="text-gray-400 hover:text-[#9932C9] font-bold text-xs flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-chevron-left"></i> BACK
+            </button>
+            <h2 class="neon-label neon-label-purple" style="font-size:14px;">Study Timetable</h2>
+        </div>
+
+        <div class="glass-ui p-5 mb-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h3 class="text-white font-black text-base mb-0.5">📅 Weekly Planner</h3>
+                <p class="text-gray-500 text-xs">Tap any <b style="color:#9932C9;">+</b> slot to assign a subject · <b style="color:#9932C9;">Today</b> is highlighted</p>
+            </div>
+            <button onclick="clearTimetable()" class="text-xs text-red-500/60 hover:text-red-400 border border-red-500/20 px-3 py-1.5 rounded-xl transition-all">🗑️ Clear All</button>
+        </div>
+        <p id="tt-stats" style="text-align:right;color:#6b7280;font-size:10px;margin-bottom:6px;padding:0 4px;"></p>
+
+        <div class="glass-ui p-3 overflow-x-auto" id="tt-container">
+            <table style="width:100%;border-collapse:separate;border-spacing:4px;" id="tt-table">
+                <thead>
+                    <tr id="tt-head"></tr>
+                </thead>
+                <tbody id="tt-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Legend -->
+        <div class="glass-ui p-4 mt-4">
+            <p class="text-gray-500 text-xs uppercase tracking-widest mb-3">Subject Colors</p>
+            <div class="flex flex-wrap gap-2" id="tt-legend"></div>
+        </div>
+    </div>
+</div>
