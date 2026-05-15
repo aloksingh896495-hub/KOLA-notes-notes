@@ -168,7 +168,7 @@
 
         /* ── HAMBURGER MENU ── */
         #hamburger-btn {
-            width: 44px; height: 30px;
+            width: 44px; height: 10px;
             border-radius: 10px;
             background: rgba(153,50,201,0.08);
             border: 1px solid rgba(153,50,201,0.2);
