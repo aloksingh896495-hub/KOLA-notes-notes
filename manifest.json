@@ -1,0 +1,37 @@
+{
+  "name": "KOLA BRO | Premium Education Vault",
+  "short_name": "Kola Bro",
+  "description": "KOLA BRO - Premium Education Vault with AI-powered learning assistant",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#9932C9",
+  "icons": [
+    {
+      "src": "https://drive.google.com/thumbnail?id=1v5Pv5tCKQ9jm1sK5td33ePkoU0E76Ktg&sz=w192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://drive.google.com/thumbnail?id=1v5Pv5tCKQ9jm1sK5td33ePkoU0E76Ktg&sz=w512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://drive.google.com/thumbnail?id=1v5Pv5tCKQ9jm1sK5td33ePkoU0E76Ktg&sz=w192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://drive.google.com/thumbnail?id=1v5Pv5tCKQ9jm1sK5td33ePkoU0E76Ktg&sz=w512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
