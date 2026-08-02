@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KOLA BRO | Premium Education Vault</title>
+    <title>KOLA BRO | Education Education Vault</title>
 
     <!-- ── PWA: Install / Add to Home Screen support ── -->
     <link rel="manifest" href="manifest.json">
@@ -1723,6 +1723,9 @@
 <!-- ════════════════════════════════════════════
      PDF VIEWER OVERLAY (ORIGINAL)
 ════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     PDF VIEWER OVERLAY (ORIGINAL)
+══════════════════════════════════════════════ -->
 <div id="pdf-viewer-overlay">
     <div class="p-4 bg-black/90 border-b border-white/10 flex justify-between items-center backdrop-blur-md sticky top-0 z-50">
         <div class="flex items-center gap-4">
@@ -4152,7 +4155,7 @@ window.promptAdmin = function() {
     setTimeout(() => { updateBottomNav('step-about'); updateHeaderBack('step-about'); renderHeroStreak(); }, 500);
 
 
-    // PDF view tracking state
+    // PDF view tracking state// PDF view tracking state
     let _pdfViewStartTime = null;
     let _pdfViewDocId = null;
     let _currentPDFName = '';
@@ -4239,6 +4242,7 @@ window.promptAdmin = function() {
         document.getElementById('pdfFrame').src = '';
         document.body.style.overflow = 'auto';
     }
+    
 
     window.setSubjectView = (v) => {
         currentSubjectView = v;
