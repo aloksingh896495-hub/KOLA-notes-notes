@@ -2,7 +2,7 @@
   "name": "KOLA BRO | Premium Education Vault",
   "short_name": "Kola Bro",
   "description": "KOLA BRO - Premium Education Vault with AI-powered learning assistant",
-  "start_url": "./index.htm",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
