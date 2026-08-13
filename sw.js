@@ -14,7 +14,7 @@ const CACHE_NAME = `kola-bro-${CACHE_VERSION}`;
 // The main pages are always fetched fresh from the network first (see below).
 const OFFLINE_FALLBACK_URLS = [
     './',
-    './index.htm'
+    './index.html'
 ];
 
 // ── Install: cache a minimal offline fallback set, activate immediately ──
