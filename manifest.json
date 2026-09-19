@@ -4,7 +4,8 @@
   "description": "KOLA BRO - Premium Education Vault with AI-powered learning assistant",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -34,4 +35,4 @@
       "purpose": "maskable"
     }
   ]
-}
+}}
